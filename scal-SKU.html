@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>scal-SKU</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            background-color: #f9f9f9;
+        }
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            margin-top: 20px;
+            position: relative;
+        }
+        textarea {
+            width: calc(100% - 20px);
+            height: 150px;
+            margin: 0 10px 20px 10px;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: none;
+            overflow-y: auto;
+        }
+        #wynik {
+            padding: 10px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            white-space: pre-wrap;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        #copyButton {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+        #copyButton:hover {
+            background-color: #0056b3;
+        }
+        #kopiowanieInfo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 5px;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 1000;
+        }
+        .separator-options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        .separator-button {
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            background-color: #ddd;
+            transition: background-color 0.3s ease;
+        }
+        .separator-button.active {
+            background-color: #007bff;
+            color: white;
+        }
+        #duplikatyInfo {
+            color: red;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .author-info {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            color: #999;
+            font-size: 12px;
+        }
+        .author-info a {
+            color: #999; /* ten sam kolor co tekst */
+            text-decoration: none; /* usuwa podkreślenie */
+        }
+        .author-info a:hover {
+            color: #777; /* lekko ciemniejszy przy najechaniu */
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Scalanie SKU</h1>
+    
+    <div class="separator-options">
+        <span>Separator:</span>
+        <button class="separator-button active" data-separator="|">|</button>
+        <button class="separator-button" data-separator="&">&</button>
+        <button class="separator-button" data-separator="+">+</button>
+    </div>
+
+    <textarea id="dane" placeholder="Wklej SKU oddzielone enterami..."></textarea>
+    <div id="duplikatyInfo"></div>
+    <h2>Wynik:</h2>
+    <div id="wynik"></div>
+    <button id="copyButton">Copy</button>
+    <div id="kopiowanieInfo">Skopiowano!</div>
+</div>
+
+<script>
+    let separator = '|';
+
+    function aktualizujWynik() {
+        let linie = document.getElementById('dane').value
+            .split('\n')
+            .map(linia => linia.trim())
+            .filter(linia => linia !== '');
+        
+        let unikalneLinie = [];
+        let duplikaty = [];
+        let wystapienia = {};
+
+        linie.forEach(linia => {
+            if (wystapienia[linia]) {
+                duplikaty.push(linia);
+            } else {
+                unikalneLinie.push(linia);
+                wystapienia[linia] = true;
+            }
+        });
+
+        document.getElementById('wynik').textContent = unikalneLinie.join(separator);
+        
+        if (duplikaty.length > 0) {
+            document.getElementById('duplikatyInfo').textContent = `Znaleziono ${duplikaty.length} duplikatów: ${[...new Set(duplikaty)].join(', ')} (usunięto)`;
+        } else {
+            document.getElementById('duplikatyInfo').textContent = '';
+        }
+    }
+
+    document.getElementById('dane').addEventListener('input', aktualizujWynik);
+    
+    document.querySelectorAll('.separator-button').forEach(button => {
+        button.addEventListener('click', function() {
+            document.querySelectorAll('.separator-button').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            separator = this.getAttribute('data-separator');
+            aktualizujWynik();
+        });
+    });
+
+    document.getElementById('copyButton').addEventListener('click', function() {
+        let wynik = document.getElementById('wynik').textContent;
+        if (!wynik) return;
+        
+        navigator.clipboard.writeText(wynik).then(() => {
+            let liczbaElementow = wynik.split(separator).length;
+            let kopiowanieInfo = document.getElementById('kopiowanieInfo');
+            kopiowanieInfo.textContent = `Skopiowano! (${liczbaElementow})`;
+            kopiowanieInfo.style.display = 'block';
+            setTimeout(() => {
+                kopiowanieInfo.style.display = 'none';
+            }, 2000);
+        }).catch(err => console.error('Błąd kopiowania:', err));
+    });
+</script>
+<div class="author-info">
+    Autor: <a href="https://github.com/jzebala" target="_blank">jzebala</a>
+</div>
+</body>
+</html>
